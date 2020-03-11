@@ -1,0 +1,348 @@
+#!/usr/bin/env python3
+
+# mtu - media tracker utility
+
+import json
+import os
+
+from datetime import timezone
+from enum import Enum
+from collections import OrderedDict
+from hashlib import sha256
+from urllib.request import urlopen, Request, URLError
+from urllib.parse import urlparse
+
+from bs4 import BeautifulSoup
+from iso8601 import parse_date, ParseError
+
+class Config:
+    data_dir        = "data"
+    cache_dir       = "cache"
+    user_agent      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0"
+    import_file     = "urls.list"
+
+class Fields(Enum):
+    """Standard fields we'll try to populate from all the various ways to store metadata used on the web.
+
+    Members of this enum are used as dict keys.
+    """
+    url             = "url"
+    title           = "title"
+    author          = "author"
+    published_utc   = "published_utc"
+    updated_utc     = "updated_utc"
+
+class Src(Enum):
+    """Source elements we'll take metadata from.
+
+    Src lists elements commonly used to store metadata. Members with cust_ prefix refer to elements known by custom per-site code to extract metadata. Members of this enum are used as dict keys. String values are hints to source elements.
+    """
+    # canonical link from head>link[rel=canonical][href]
+    head_canonical      = "canonical"
+    # url from meta[property=og:url][content], Open Graph
+    og_url              = "og:url"
+    # custom URL location
+    cust_url            = "cust_url"
+    # title from meta[property=og:title][content], Open Graph
+    og_title            = "og:title"
+    # title from head>title
+    head_title          = "title"
+    # custom title location
+    cust_title          = "cust_title"
+    # author name from meta[name=author][content], https://www.w3schools.com/tags/tag_meta.asp
+    head_author         = "meta[name=author]"
+    # custom author location
+    cust_author         = "cust_author"
+    # published time from meta[property=article:published_time][content], Open Graph
+    og_published_time   = "article:published_time"
+    # published time from meta[itemprop=datePublished][content], schema.org
+    so_date_published   = "schema:datePublished"
+    # custom published_utc location
+    cust_published_time = "cust_published_time"
+    # updated time from meta[property=article:modified_time][content], Open Graph
+    og_modified_time    = "article:modified_time"
+    # modified time from meta[itemprop=dateModified][content], schema.org
+    so_date_modified    = "schema:dateModified"
+    # custom updated_utc location
+    cust_updated_time   = "cust_updated_time"
+
+# Order in which source meta values are considered.
+# Custom sources have top priority because custom per-site code knows best where the best meta values are stored.
+SRC_PRIORITIES = {
+    Fields.url           : [ Src.cust_url, Src.head_canonical ],
+    Fields.title         : [ Src.cust_title, Src.og_title, Src.head_title ],
+    Fields.author        : [ Src.cust_author, Src.head_author ],
+    Fields.published_utc : [ Src.cust_published_time, Src.og_published_time, Src.so_date_published ],
+    Fields.updated_utc   : [ Src.cust_updated_time, Src.og_modified_time, Src.so_date_modified ],
+}
+
+def value(bstag, attr=None):
+    """Return the value of a bs4 tag or its attribute. None is returned if the tag or attribute is None."""
+    if bstag:
+        if attr:
+            return bstag.get(attr)
+        else:
+            return bstag.string
+    return None
+
+def canonical(bs):
+    return value(bs.find("link", attrs={"rel": "canonical"}), "href")
+
+def common_meta_values(bs):
+    """Extract values from common metadata elements listed in Src."""
+    return {
+        Src.head_canonical    : canonical(bs),
+        Src.og_url            : value(bs.find("meta", attrs={"property": "og:url"}), "content"),
+        Src.og_title          : value(bs.find("meta", attrs={"property": "og:title"}), "content"),
+        Src.head_title        : value(bs.head.title),
+        Src.head_author       : value(bs.find("meta", attrs={"name": "author"}), "content"),
+        Src.og_published_time : value(bs.find("meta", attrs={"property": "article:published_time"}), "content"),
+        Src.so_date_published : value(bs.find("meta", attrs={"itemprop": "datePublished"}), "content"),
+        Src.og_modified_time  : value(bs.find("meta", attrs={"property": "article:modified_time"}), "content"),
+        Src.so_date_modified  : value(bs.find("meta", attrs={"itemprop": "dateModified"}), "content"),
+    }
+
+CUSTOM_META_EXTRACTORS = {
+    "bitcoinist.com": lambda bs: {
+        # flaky, replace with LD
+        Src.cust_author         : value(bs.find("div", attrs={"class": "meta"}).find("p").find("a")),
+    },
+    "captainaltcoin.com": lambda bs: {
+        # not bad but LD is better
+        Src.cust_author         : value(bs.find("a", attrs={"rel": "author"})),
+    },
+    "coindesk.com": lambda bs: {
+        # flaky, replace with LD
+        Src.cust_author         : value(bs.find("section", attrs={"class": "author"})
+                                          .find("h5", attrs={"class": "heading"})),
+    },
+    "forbes.com": lambda bs: {
+        # dates in LD are more precise than schema.org but not ISO 8601
+    },
+    "news.bitcoin.com": lambda bs: {
+        # flaky, LD is better
+        Src.cust_author         : value(bs.find("p", attrs={"class": "article__info__author"}).find("strong")),
+    },
+    "thehackernews.com": lambda bs: {
+        # schema.org metadata embedded in microdata
+        Src.cust_author         : value(bs.find("div", attrs={"itemtype": "http://schema.org/Person"})
+                                          .find("meta", attrs={"itemprop": "name"}), "content"),
+    },
+    "themerkle.com": lambda bs: {
+        Src.cust_author         : value(bs.find("a", attrs={"rel": "author"})),
+    }
+}
+
+def get_domain(url):
+    hn = urlparse(url).hostname
+    nowww = hn[len("www."):] if hn.startswith("www.") else hn
+    return nowww
+
+def custom_meta_values(bs, domain):
+    custom_ex = CUSTOM_META_EXTRACTORS.get(domain)
+    if custom_ex:
+        return custom_ex(bs)
+    else:
+        return None
+
+def make_multimeta(src_values):
+    """Multimeta groups source values by target Fields, sorts values in each group by their priority, and removes None values."""
+    multimeta = {}
+    for field in Fields:
+        values = OrderedDict()
+        for src_el in SRC_PRIORITIES[field]:
+            val = src_values.get(src_el)
+            if val: # only include non-None values
+                values[src_el] = val
+        multimeta[field] = values
+    return multimeta
+
+def normalize_iso_date(date_str):
+    """Normalize various possible ISO 8601 date strings to '2020-01-01 10:34:47'"""
+    try:
+        # first convert to UTC, then drop tzinfo to remove tz offset from the formatted string
+        return parse_date(date_str).astimezone(timezone.utc).replace(tzinfo=None).isoformat(' ')
+    except ParseError:
+        return date_str
+
+def first_value(dict_, default=None):
+    try:
+        return next(iter(dict_.values()))
+    except StopIteration:
+        return default
+
+def best_normalized_values(multimeta):
+    """Pick first value from each OrderedDict storing meta value candidates, normalize date values."""
+    best = {}
+    for field, values in multimeta.items():
+        best_val = first_value(values)
+        if field in [Fields.published_utc, Fields.updated_utc]:
+            best_val = normalize_iso_date(best_val)
+        best[field] = best_val
+    return best
+
+def print_source_values(src_meta): # dict(Src -> str)
+    """Print non-None source meta values in standard order."""
+    for src_el in Src:
+        val = src_meta.get(src_el)
+        if val:
+            print("  {:22}: {}".format(src_el.value, val))
+
+def print_single_values(meta): # dict(Field -> str)
+    """Print non-None standard meta values in standard order."""
+    for field in Fields:
+        val = meta.get(field)
+        if val:
+            print("  {:22}: {}".format(field.name, val))
+
+def print_multimeta(multimeta): # dict(Field -> OrderedDict(Src -> str))
+    for field in Fields:
+        src_values = multimeta.get(field)
+        if src_values:
+            print_source_values(src_values)
+
+class CommandError(Exception):
+    """Raise this when command is called by the user incorrectly."""
+    pass
+
+def read_lines(path):
+    with open(path) as f:
+        return [line.rstrip('\n') for line in f]
+
+def make_bs(filename):
+    with open(filename) as html_file:
+        bs = BeautifulSoup(html_file, "html.parser")
+    return bs
+
+def cmd_getmeta(args):
+    filenames = []
+    if args.file:
+        filenames.append(args.file)
+    if args.list:
+        listed_files = read_lines(args.list)
+        filenames.extend(listed_files)
+
+    for fname in filenames:
+        print("--", fname)
+        bs = make_bs(fname)
+
+        src_values = common_meta_values(bs)
+        print("COMMON meta values:")
+        print_source_values(src_values)
+
+        url = src_values[Src.head_canonical] # URL might be externally provided later
+        if url:
+            domain = get_domain(url)
+            custom_values = custom_meta_values(bs, domain)
+            if custom_values:
+                print("CUSTOM meta values for {}: ".format(domain))
+                print_source_values(custom_values)
+                src_values.update(custom_values)
+
+        # multimeta construction is redundant now but might be useful in the future. we'll see
+        multimeta = make_multimeta(src_values)
+
+        best = best_normalized_values(multimeta)
+        print("BEST normalized meta values:")
+        print_single_values(best)
+
+def cmd_inspect(args):
+    bs = make_bs(args.file)
+    print("-- tags with itemprop attribute from schema.org:")
+    for tag in bs.find_all(True, attrs={"itemprop": True}):
+        print(tag)
+    print("-- ld+json")
+    for tag in bs.find_all("script", attrs={"type": "application/ld+json"}):
+        print(tag.name, tag.attrs)
+        ld = json.loads(tag.string)
+        print(json.dumps(ld, indent=4, sort_keys=True))
+
+def init():
+    if not os.path.isdir(Config.cache_dir):
+        os.mkdir(Config.cache_dir)
+
+def cache_id(url):
+    # mind no newline is added so the hash may differ from a typical sha256sum use
+    return sha256(url.encode()).hexdigest()
+
+def cache_exists(cid):
+    return os.path.isfile(os.path.join(Config.cache_dir, cid))
+
+def cache_save(cid, bytes_):
+    try:
+        with open(os.path.join(Config.cache_dir, cid), "xb") as f:
+            f.write(bytes_)
+        print("cached as", cid)
+    except FileExistsError as e:
+        print("already cached as", cid)
+
+def cmd_fetch(args):
+    init()
+    url = args.url
+    print("fetching", url)
+    existing_cid = cache_id(url)
+    if cache_exists(existing_cid):
+        print("cache hit", existing_cid)
+        return
+    req = Request(url, headers={"User-Agent": Config.user_agent})
+    try:
+        with urlopen(req) as resp:
+            bytes_ = resp.read()
+    except URLError as e:
+        print("error:", e)
+        return
+    final_url = resp.geturl()
+    if url != final_url:
+        print("warning: redirected to", final_url)
+    bs = BeautifulSoup(bytes_, "html.parser")
+    canon = canonical(bs)
+    if canon:
+        print("found canonical link", canon)
+        cache_url = canon
+        if final_url != canon:
+            print("warning: final response URL and canonical link differ")
+    else:
+        print("warning: canonical link not found in response from", final_url)
+        cache_url = final_url
+    cache_save(cache_id(cache_url), bytes_)
+
+def make_arg_parser():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="media tracker utility")
+    subparsers = parser.add_subparsers(dest="command", title="commands")
+
+    parser_meta = subparsers.add_parser("meta", help="extract metadata from a file")
+    parser_meta.add_argument("file", nargs='?', help="file to process")
+    parser_meta.add_argument("--list", nargs='?', const=Config.import_file,
+                                help="list of files to process")
+    # parser_meta.add_argument("--all", action="store_true", help="print all extracted metadata")
+    parser_meta.set_defaults(func=cmd_getmeta)
+
+    parser_inspect = subparsers.add_parser("inspect", help="inspect file for interesting metadata")
+    parser_inspect.add_argument("file", nargs='?', help="file to process")
+    parser_inspect.set_defaults(func=cmd_inspect)
+
+    parser_fetch = subparsers.add_parser("fetch", help="fetch a URL and cache the response for offline inspection")
+    parser_fetch.add_argument("url", help="URL to fetch")
+    parser_fetch.set_defaults(func=cmd_fetch)
+
+    return parser
+
+def main():
+    parser = make_arg_parser()
+    args = parser.parse_args()
+
+    if args.command:
+        try:
+            args.func(args)
+        except CommandError as e:
+            print("error:", e)
+        except BrokenPipeError:
+            # silence error when e.g. piping into `less` and quitting before reading all
+            pass
+    else:
+        parser.print_usage()
+
+if __name__ == "__main__":
+    main()
