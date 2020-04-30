@@ -366,6 +366,8 @@ def main():
             args.func(args)
         except CommandError as e:
             print("error:", e)
+        except KeyboardInterrupt as e:
+            print("aborting via Ctrl-C")
         except BrokenPipeError:
             # silence error when e.g. piping into `less` and quitting before reading all
             pass
