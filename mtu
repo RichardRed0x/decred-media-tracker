@@ -302,9 +302,9 @@ def cmd_fetch(args):
         log.info("found canonical link %s", canon)
         cache_url = canon
         if final_url != canon:
-            log.warning("final response URL and canonical link differ")
+            log.warning("final URL and canonical link differ")
     else:
-        log.warning("canonical link not found in response from %s", final_url)
+        log.warning("canonical link not found in HTML from %s", final_url)
         cache_url = final_url
     cache_save(cache_id(cache_url), bytes_)
 
@@ -314,18 +314,17 @@ def make_arg_parser():
     parser = argparse.ArgumentParser(description="media tracker utility")
     subparsers = parser.add_subparsers(dest="command", title="commands")
 
-    parser_meta = subparsers.add_parser("meta", help="extract metadata from a file")
+    parser_meta = subparsers.add_parser("meta", help="print metadata extracted from HTML file")
     parser_meta.add_argument("file", nargs='?', help="file to process")
     parser_meta.add_argument("--list", nargs='?', const=Config.import_file,
                                 help="list of files to process")
-    # parser_meta.add_argument("--all", action="store_true", help="print all extracted metadata")
     parser_meta.set_defaults(func=cmd_getmeta)
 
-    parser_inspect = subparsers.add_parser("inspect", help="inspect file for interesting metadata")
+    parser_inspect = subparsers.add_parser("inspect", help="inspect HTML file for possibly interesting metadata")
     parser_inspect.add_argument("file", nargs='?', help="file to process")
     parser_inspect.set_defaults(func=cmd_inspect)
 
-    parser_fetch = subparsers.add_parser("fetch", help="fetch a URL and cache the response for offline inspection")
+    parser_fetch = subparsers.add_parser("fetch", help="fetch URL and cache its HTML")
     parser_fetch.add_argument("url", help="URL to fetch")
     parser_fetch.set_defaults(func=cmd_fetch)
 
