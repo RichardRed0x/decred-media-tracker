@@ -3,6 +3,7 @@
 # mtu - media tracker utility
 
 import json
+import logging as log
 import os
 
 from datetime import timezone
@@ -20,6 +21,7 @@ class Config:
     cache_dir       = "cache"
     user_agent      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0"
     import_file     = "urls.list"
+    log_file        = "mtu.log"
 
 class Fields(Enum):
     """Standard fields we'll try to populate from all the various ways to store metadata used on the web.
@@ -330,6 +332,14 @@ def make_arg_parser():
     return parser
 
 def main():
+    log.basicConfig(level=log.INFO,
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s.%(msecs)03d [%(levelname)-4.4s] %(message)s",
+                    handlers=[
+                        log.FileHandler(Config.log_file),
+                        log.StreamHandler(),
+                    ])
+
     parser = make_arg_parser()
     args = parser.parse_args()
 
