@@ -274,37 +274,37 @@ def cache_save(cid, bytes_):
     try:
         with open(os.path.join(Config.cache_dir, cid), "xb") as f:
             f.write(bytes_)
-        print("cached as", cid)
+        log.info("cached as %s", cid)
     except FileExistsError as e:
-        print("already cached as", cid)
+        log.warning("already cached as %s", cid)
 
 def cmd_fetch(args):
     init()
     url = args.url
-    print("fetching", url)
+    log.info("fetching %s", url)
     existing_cid = cache_id(url)
     if cache_exists(existing_cid):
-        print("cache hit", existing_cid)
+        log.info("cache hit %s", existing_cid)
         return
     req = Request(url, headers={"User-Agent": Config.user_agent})
     try:
         with urlopen(req) as resp:
             bytes_ = resp.read()
     except URLError as e:
-        print("error:", e)
+        log.error(e)
         return
     final_url = resp.geturl()
     if url != final_url:
-        print("warning: redirected to", final_url)
+        log.warning("redirected to %s", final_url)
     bs = BeautifulSoup(bytes_, "html.parser")
     canon = canonical(bs)
     if canon:
-        print("found canonical link", canon)
+        log.info("found canonical link %s", canon)
         cache_url = canon
         if final_url != canon:
-            print("warning: final response URL and canonical link differ")
+            log.warning("final response URL and canonical link differ")
     else:
-        print("warning: canonical link not found in response from", final_url)
+        log.warning("canonical link not found in response from %s", final_url)
         cache_url = final_url
     cache_save(cache_id(cache_url), bytes_)
 
