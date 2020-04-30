@@ -6,6 +6,7 @@ import csv
 import json
 import logging as log
 import os
+import socket
 
 from datetime import timezone
 from enum import Enum
@@ -24,6 +25,7 @@ class Config:
     import_file     = "urls.list"
     main_csv        = "media.csv"
     log_file        = "mtu.log"
+    conn_timeout    = 10
 
 class Fields(Enum):
     """Standard fields we'll try to populate from all the various ways to store metadata used on the web.
@@ -288,8 +290,11 @@ def fetch_url(url):
         return
     req = Request(url, headers={"User-Agent": Config.user_agent})
     try:
-        with urlopen(req) as resp:
+        with urlopen(req, timeout=Config.conn_timeout) as resp:
             bytes_ = resp.read()
+    except socket.timeout as e:
+        log.error(e)
+        return
     except URLError as e:
         log.error(e)
         return
