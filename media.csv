@@ -4,7 +4,7 @@ published_utc,url,title,author,contributor,backlink,type,topics,other_projects,d
 2015-12-28,https://calvinayre.com/2015/12/28/bitcoin/bitcoin-developers-create-new-digital-currency/,"Cryptocurrency roundup: Bitcoin developers create new digital currency, ",Jasmine Solana,no,no,,launch,no,
 2015-12-28,https://news.softpedia.com/news/amid-bitcoin-centralization-worries-core-developers-start-new-currency-called-decred-498137.shtml,"Amid Bitcoin Centralization Worries, Developers Start New Currency Called Decred",Catalin Cimpanu,no,yes,,launch,no,
 2015-12-28,https://thehackernews.com/2015/12/decred-bitcoin-currency.html,Bitcoin Core Developers Quit Bitcoin Project to Launch a New Digital Currency,Swati Khandelwal,no,no,,launch,no,
-2015-12-29,http://www.the-blockchain.com/2015/12/29/bitcoin-developers-bail-to-start-new-digital-currency/,Bitcoin Developers Bail to Start New Digital Currency,Richard Kastelein,no,yes,,launch,no,
+2015-12-29,http://www.the-blockchain.com/2015/12/29/bitcoin-developers-bail-to-start-new-digital-currency/,Bitcoin Developers Bail to Start New Digital Currency,Richard Kastelein,no,yes,,launch,no,yes
 2015-12-29,https://cointelegraph.com/news/decred-an-innovative-cryptocurrency-or-a-well-arranged-scam,Decred: An Innovative Cryptocurrency or A Well Arranged Scam?,Jacob Timp,no,yes,,launch,no,
 2015-12-29,https://securityintelligence.com/news/digital-currency-divide-bitcoin-decred-and-the-virtual-finance-future/,"Digital Currency Divide: Bitcoin, Decred and the Virtual Finance Future",Douglas Bonderud,no,,,launch,no,
 2015-12-31,https://www.coindesk.com/press-releases/meet-decred-digital-currency-bitcoin-developers/,Meet Decred: A Digital Currency by Bitcoin Developers,Jake Yocom-Piatt,no,,press release,,,yes
@@ -28,7 +28,7 @@ published_utc,url,title,author,contributor,backlink,type,topics,other_projects,d
 2017-07-21,https://bitcoinmagazine.com/articles/op-ed-no-governance-old-men-coordinating-protocol-upgrades-future,Op Ed: No Governance for Old Men: Coordinating Protocol Upgrades in the Future,Jon Matonis,,yes,,,,
 2017-08-07,https://bitcoinmagazine.com/articles/op-ed-five-challenges-youll-face-when-starting-your-own-blockchain-project,Op Ed: Five Challenges You'll Face When Starting Your Own Blockchain Project,Jake Yocom-Piatt,,no,,,,
 2017-08-08,https://medium.com/decred/decred-governance-system-is-a-cyphocracy-38769ded5f9b,Decred Governance System is a Cyphocracy,Haon,,,,,,
-2017-08-10,http://www.nasdaq.com/press-release/envoy-rolls-out-centralized-management-of-crypto-mining-20170810-00373,Envoy Rolls Out Centralized Management of Crypto Mining,GlobeNewswire,,,,,,
+2017-08-10,http://www.nasdaq.com/press-release/envoy-rolls-out-centralized-management-of-crypto-mining-20170810-00373,Envoy Rolls Out Centralized Management of Crypto Mining,GlobeNewswire,,,,,,yes
 2017-08-25,https://news.bitcoin.com/bitcoin-cash-becomes-the-longest-chain-as-miners-toggle-between-profits/,Bitcoin Cash Becomes the Longest Chain As Miners Toggle Between Profits,Jamie Redman,,,,,,
 2017-08-28,https://www.newsbtc.com/2017/08/28/decred-support-coming-ledgers-hardware-wallets-near-future/,Decred Support is Coming to Ledger's Hardware Wallets in the Near Future,JP Buntinx,,no,,,,
 2017-09-10,https://themerkle.com/multiple-mining-pools-suffer-from-yiimp-hack/,Multiple Mining Pools Suffer From Yiimp Hack,JP Buntinx,,no,,,,
@@ -46,17 +46,17 @@ published_utc,url,title,author,contributor,backlink,type,topics,other_projects,d
 2017-09-26,https://cryptovest.com/news/cryptocurrency-atomic-swap-spree-brings-industry-closer-to-decentralized-dream/,Cryptocurrency Atomic Swap Spree Brings Industry Closer to Decentralized Dream,Michael Kimani,,yes,,,,
 2017-09-28,https://bitcoinmagazine.com/articles/how-decentralized-exchanges-make-bitcoin-more-resilient-and-us-more-free,How Decentralized Exchanges Make Bitcoin More Resilient (and Us More Free),Giulio Prisco,,no,,,,
 2017-09-29,https://www.forbes.com/sites/wwoo/2017/09/29/is-bitcoin-in-a-bubble-check-the-nvt-ratio/,Is Bitcoin In A Bubble? Check The NVT Ratio,Willy Woo,,no,,,,
-2017-10-08,http://www.nigeriatoday.ng/2017/10/altcoin-exchange-performs-first-atomic-swap-between-bitcoin-and-ethereum/,Altcoin Exchange Performs First Atomic Swap Between Bitcoin and Ethereum,,,no,,,,
+2017-10-08,http://www.nigeriatoday.ng/2017/10/altcoin-exchange-performs-first-atomic-swap-between-bitcoin-and-ethereum/,Altcoin Exchange Performs First Atomic Swap Between Bitcoin and Ethereum,,,no,,,,yes
 2017-10-15,https://themerkle.com/viacoin-developers-complete-atomic-swap-with-litecoin/,Viacoin Developers Complete Atomic Swap With Litecoin,JP Buntinx,,no,,,,
 2017-10-19,https://www.businessinsider.com/list-top-cryptocurrencies-analysis-comparison-2017-10,List of top virtual currencies in 2017 and what differentiates them,Divya Joshi,,yes,,,,
 2017-10-23,https://bitcoinist.com/atomic-swaps-what-they-are-how-they-work-and-what-they-mean-for-digital-currencies/,"Atomic Swaps: What they are, how they work, and what they mean for digital currencies",Matthew Hrones,,no,,,,
 2017-10-26,https://bitcoinmagazine.com/articles/decred-launches-proposal-system-advance-blockchain-governance,Decred Launches Proposal System to Advance Blockchain Governance,Giulio Prisco,,yes,,,,
-2017-10-26,https://coinvedi.com/decred-launches-proposal-system-to-advance-blockchain-governance/,Decred Launches Proposal System to Advance Blockchain Governance,CoinVedi,,no,,,,
+2017-10-26,https://coinvedi.com/decred-launches-proposal-system-to-advance-blockchain-governance/,Decred Launches Proposal System to Advance Blockchain Governance,CoinVedi,,no,,,,yes
 2017-10-26,https://cryptovest.com/news/decred-soon-mined-by-asic/,Decred: Soon Mined by ASIC,Christine Masters,,no,,,,
 2017-10-26,http://www.nasdaq.com/article/decred-launches-proposal-system-to-advance-blockchain-governance-cm866078,Decred Launches Proposal System to Advance Blockchain Governance,Bitcoin Magazine,,yes,,,,
-2017-10-26,http://pumpsignals.net/blog/decred-launches-proposal-system-to-advance-blockchain-governance-2/,Decred Launches Proposal System to Advance Blockchain Governance,,,no,,,,
+2017-10-26,http://pumpsignals.net/blog/decred-launches-proposal-system-to-advance-blockchain-governance-2/,Decred Launches Proposal System to Advance Blockchain Governance,,,no,,,,yes
 2017-10-26,https://trading.co.uk/story/11f675a1-4a4c-4963-86c3-c022575f447e/,Decred Launches Proposal System to Advance Blockchain Governance,,,no,,,,
-2017-10-29,https://www.bitcoinmarketinsider.com/decred-launches-proposal-system-to-advance-blockchain-governance/,Decred Launches Proposal System to Advance Blockchain Governance,,,yes,,,,
+2017-10-29,https://www.bitcoinmarketinsider.com/decred-launches-proposal-system-to-advance-blockchain-governance/,Decred Launches Proposal System to Advance Blockchain Governance,,,yes,,,,yes
 2017-10-30,https://www.stickergiant.com/blog/custom-stickers-for-decred-an-open-and-progressive-cryptocurrency-based-on-blockchain/,"Custom stickers for Decred, an open and progressive cryptocurrency based on blockchain",Andrew Matranga,,yes,,,,
 2017-11-25,https://btcmanager.com/beginners-guide-decred/,A Beginner's Guide to Decred,Jamie Holmes,,yes,,,,
 2017-11-27,https://cryptovest.com/news/decred-price-doubling-on-lightning-network-news/,Decred Price Doubling on Lightning Network News,Christine Masters,,no,,,,
@@ -85,18 +85,18 @@ published_utc,url,title,author,contributor,backlink,type,topics,other_projects,d
 2018-05-12,https://www.placeholder.vc/blog/2018/5/12/decred-investment-thesis,Decred Investment Thesis,,,yes,,,,
 2018-05-13,https://www.fxstreet.com/cryptocurrencies/news/decred-vs-bitcoin-growth-perspective-201805131246,Decred VS Bitcoin growth perspective,Viktor Karapetjanc,,no,,,,
 2018-05-15,https://cryptovest.com/news/decred-dcr-price-booms-on-consensus-2018-publicity/,Decred (DCR) Price Booms on Consensus 2018 Publicity,Christine Masters,,no,,,,
-2018-05-16,http://technewsleader.com/2018/05/17/augur-rep-decred-dcr-taking-bullish-run/,Augur (REP) & Decred (DCR) Taking Bullish Run,Kloy P.R.,,no,,,,
+2018-05-16,http://technewsleader.com/2018/05/17/augur-rep-decred-dcr-taking-bullish-run/,Augur (REP) & Decred (DCR) Taking Bullish Run,Kloy P.R.,,no,,,,yes
 2018-05-22,https://cryptovest.com/news/sole-survivor-decred-dcr-unaffected-in-latest-market-downturn/,Sole Survivor: Decred (DCR) Unaffected in Latest Market Downturn,Christine Masters,,no,,,,
 2018-05-30,https://bitcoinexchangeguide.com/weiss-ratings-may-monthly-crypto-coin-token-rankings-guide/,Weiss Ratings May Monthly Crypto Coin & Token Rankings,Bitcoin Exchange Team,,no,,,,
 2018-05-30,https://btcmanager.com/hardware-companies-are-launching-dedicated-asic-miners-for-decred/,Hardware Companies Are Launching Dedicated ASIC Miners for Decred,Rahul Nambiampurath,,yes,,,,
 2018-06-05,https://hadeplatform.com/articles/2018/06/05/how-weiss-ratings-can-help-cryptocurrency-rankings,How Weiss Ratings Can Help Cryptocurrency Rankings,Victoria Raphael,,no,,,,
 2018-06-05,https://icoexaminer.com/ico-news/decred-seeking-to-create-binance-and-etherdelta-hybrid-as-new-exchange-model/,Decred Seeking to Create Binance and EtherDelta Hybrid as New Exchange Model,Malachy Caldwell,,yes,,,,
 2018-06-05,https://www.prweb.com/releases/2018/06/prweb15537837.htm,Decred Releases Proposal for Decentralized Exchange ('DEX') with Eye toward Disrupting Billion-Dollar Exchange Market,Jake Yocom-Piatt,,yes,,,,
-2018-06-08,https://cryptodisrupt.com/decred-proposes-a-new-kind-of-exchange/,Decred Proposes a New Kind of Exchange,Kai Morris,,yes,,,,
+2018-06-08,https://cryptodisrupt.com/decred-proposes-a-new-kind-of-exchange/,Decred Proposes a New Kind of Exchange,Kai Morris,,yes,,,,yes
 2018-06-08,https://cryptodaily.co.uk/2018/06/decred-flies-up-with-new-announcement/,Decred Flies Up With New Announcement,Robert Johnson,,yes,,,,
 2018-06-09,https://captainaltcoin.com/decred-dcr-the-sleeper-hit-of-2018-and-a-long-term-hold-for-the-patient-investors/,Decred (DCR) - The sleeper hit of 2018 and a long-term hold for the patient investors,Felix Küster,,yes,,,,
 2018-06-09,https://www.newsbtc.com/2018/06/09/asian-cryptocurrency-trading-update-decred-creeps-sideways-market/,Asian Cryptocurrency Trading Update: Decred Creeps Up in Sideways Market,Martin Young,,yes,,,,
-2018-09-06,https://www.dashforcenews.com/decred-cryptocurrency-gives-analysis-of-dash/,Decred Cryptocurrency Gives Analysis of Dash,Justin Szilard,,,,,,
+2018-09-06,https://www.dashforcenews.com/decred-cryptocurrency-gives-analysis-of-dash/,Decred Cryptocurrency Gives Analysis of Dash,Justin Szilard,,,,,,yes
 2018-09-20,https://www.coindesk.com/one-of-investors-favorite-governance-blockchains-is-handing-over-20-million,One of Investors' Favorite Governance Blockchains Is Handing Over $20 Million,Brady Dale,,,,,,
 2018-10-16,https://www.coindesk.com/decred-is-turning-its-entire-21-million-crypto-treasury-over-to-investors,Decred Is Turning Its Entire $21 Million Crypto Treasury Over to Investors,Brady Dale,,yes,article,politeia,,
 2018-10-16,https://www.cryptoglobe.com/latest/2018/10/decreds-new-governance-system-allows-users-to-control-20m-treasury/,Decred's New Governance System Allows Users to Control $20M Treasury,,,,article,politeia,,
@@ -104,7 +104,7 @@ published_utc,url,title,author,contributor,backlink,type,topics,other_projects,d
 2018-10-17,https://cryptovest.com/news/decred-dcr-launches-politeia-voting-system/,,,,,,,,
 2018-10-17,https://bitcoinexchangeguide.com/decred-dcr-20-million-crypto-treasury-turns-to-self-governance-with-launch-of-politeia/,,,,,,,,
 2018-10-17,https://toshitimes.com/decreds-governance-system-goes-live-21-million-crypto-treasury-is-in-the-hands-of-stakeholders/,,,,,,,,
-2018-10-17,https://bcfocus.com/news/decred-hands-over-control-of-treasury-worth-over-20-million-to-investors/25324/,,,,,,,,
+2018-10-17,https://bcfocus.com/news/decred-hands-over-control-of-treasury-worth-over-20-million-to-investors/25324/,,,,,,,,yes
 2018-10-17,https://cryptoblockwire.com/decred-unveils-politeia/,,,,,,,,
 2018-10-18,https://www.unlock-bc.com/news/2018-10-18/decred-launches-politeia-self-governance-system-with-release-of-20-million-treasury,,,,,,,,
 2018-10-18,https://blockchainreporter.net/2018/10/18/decred-dcr-blockchain-project-launches-its-self-governance-system-called-politeia/,,,,,,,,
