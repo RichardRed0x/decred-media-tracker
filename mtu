@@ -218,9 +218,12 @@ def read_lines(path):
     with open(path) as f:
         return [line.rstrip('\n') for line in f]
 
-def make_bs(filename):
-    with open(filename) as html_file:
-        return BeautifulSoup(html_file, "html.parser")
+def make_bs(obj):
+    return BeautifulSoup(obj, "html.parser")
+
+def make_bs_from_file(filename):
+    with open(filename) as f:
+        return make_bs(f)
 
 def cmd_getmeta(args):
     filenames = []
@@ -232,7 +235,7 @@ def cmd_getmeta(args):
 
     for fname in filenames:
         print("--", fname)
-        bs = make_bs(fname)
+        bs = make_bs_from_file(fname)
 
         src_values = common_meta_values(bs)
         print("COMMON meta values:")
@@ -255,7 +258,7 @@ def cmd_getmeta(args):
         print_single_values(best)
 
 def cmd_inspect(args):
-    bs = make_bs(args.file)
+    bs = make_bs_from_file(args.file)
     print("-- tags with itemprop attribute from schema.org:")
     for tag in bs.find_all(True, attrs={"itemprop": True}):
         print(tag)
@@ -286,7 +289,7 @@ def cache_save(cid, bytes_):
 
 def cache_load_bs(cid):
     """Build a BeatutifulSoup instance from the cached file."""
-    return make_bs(os.path.join(Config.cache_dir, cid))
+    return make_bs_from_file(os.path.join(Config.cache_dir, cid))
 
 CacheHit = namedtuple("CacheHit", ["url", "cache_id"])
 FetchResult = namedtuple("FetchResult", ["url", "cache_id", "bs"])
@@ -312,18 +315,18 @@ def fetch_url(url):
     final_url = resp.geturl()
     if url != final_url:
         log.warning("redirected to: %s", final_url)
-    bs = BeautifulSoup(bytes_, "html.parser") # todo: don't construct bs in fetch at all
     cid = cache_id(final_url)
     cache_save(cid, bytes_)
-    return FetchResult(url = final_url, cache_id = cid, bs = bs)
+    # since we have the full response now, return it as well to avoid a redundant read from the cache
+    return FetchResult(url = final_url, cache_id = cid, bs = make_bs(bytes_))
 
 def load_url(url):
     """Like fetch_url, but also load the cached file if there was a cache hit."""
-    res = fetch_url(url)
-    if isinstance(res, CacheHit):
-        bs = cache_load_bs(res.cache_id)
-        return FetchResult(url = res.url, cache_id = res.cache_id, bs = bs)
-    return res
+    fr = fetch_url(url)
+    if isinstance(fr, CacheHit):
+        bs = cache_load_bs(fr.cache_id)
+        return FetchResult(url = fr.url, cache_id = fr.cache_id, bs = bs)
+    return fr
 
 def csv_iter(csvfilename):
     """Generator yielding rows of the csv file."""
