@@ -312,17 +312,8 @@ def fetch_url(url):
     final_url = resp.geturl()
     if url != final_url:
         log.warning("redirected to: %s", final_url)
-    bs = BeautifulSoup(bytes_, "html.parser")
-    canon = canonical(bs)
-    if canon:
-        log.info("found canonical link: %s", canon)
-        cache_url = canon
-        if final_url != canon:
-            log.warning("final URL and canonical link differ")
-    else:
-        log.warning("canonical link not found in HTML from %s", final_url)
-        cache_url = final_url
-    cid = cache_id(cache_url)
+    bs = BeautifulSoup(bytes_, "html.parser") # todo: don't construct bs in fetch at all
+    cid = cache_id(final_url)
     cache_save(cid, bytes_)
     return FetchResult(url = final_url, cache_id = cid, bs = bs)
 
@@ -374,6 +365,15 @@ def update_csv(csvfilename):
             if isinstance(fr, FetchResult):
                 if url != fr.url:
                     row[CsvRow.url] = fr.url
+                # inspect canonical
+                # we can't automatically determine whether to use canonical link because
+                # it is not properly populated on some sites
+                canon = canonical(fr.bs)
+                if canon:
+                    if canon != fr.url:
+                        log.warning("canonical link is different from the final URL: %s", canon)
+                else:
+                    log.warning("canonical link is missing")
             elif isinstance(fr, Exception):
                 row[CsvRow.dead_link] = CsvConst.true
                 log.info("could not fetch, marked as dead link: %s", url)
