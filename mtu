@@ -333,7 +333,12 @@ def csv_iter(csvfilename):
 
 class CsvRow:
     """Indexes of fields in the csv row/record."""
-    url = 1
+    url         = 1
+    dead_link   = 9
+
+class CsvConst:
+    false   = "no"
+    true    = "yes"
 
 def fetch_from_csv(csvfilename):
     log.info("fetching URLs from %s", csvfilename)
@@ -359,8 +364,8 @@ def update_csv(csvfilename):
             if url != fr.url:
                 row[CsvRow.url] = fr.url
         elif isinstance(fr, Exception):
-            log.info("could not fetch, please mark as dead link: %s", url)
-            # todo mark automatically
+            row[CsvRow.dead_link] = CsvConst.true
+            log.info("could not fetch, marked as dead link: %s", url)
         new_rows.append(row)
 
     # overwrite existing file
