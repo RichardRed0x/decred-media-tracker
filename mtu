@@ -333,6 +333,12 @@ def csv_iter(csvfilename):
     with open(csvfilename, newline='') as csvfile:
         yield from csv.reader(csvfile)
 
+def write_csv(filename, rows):
+    # overwrite existing file
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+        writer.writerows(rows)
+
 class CsvRow:
     """Indexes of fields in the csv row/record."""
     url         = 1
@@ -352,7 +358,7 @@ def update_csv(csvfilename):
     new_rows = []
     csvit = csv_iter(csvfilename)
     try:
-        header = next(csvit) # save header for writing it back later
+        new_rows.append(next(csvit)) # header
     except StopIteration:
         log.error("empty csv file: %s", csvfilename)
         return
@@ -382,11 +388,7 @@ def update_csv(csvfilename):
                 log.info("could not fetch, marked as dead link: %s", url)
         new_rows.append(row)
 
-    # overwrite existing file
-    with open(csvfilename, "w", newline="") as outfile:
-        writer = csv.writer(outfile, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
-        writer.writerow(header)
-        writer.writerows(new_rows)
+    write_csv(csvfilename, new_rows)
     log.info("file updated: %s", csvfilename)
 
 def cmd_fetch(args):
