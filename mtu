@@ -217,8 +217,7 @@ def read_lines(path):
 
 def make_bs(filename):
     with open(filename) as html_file:
-        bs = BeautifulSoup(html_file, "html.parser")
-    return bs
+        return BeautifulSoup(html_file, "html.parser")
 
 def cmd_getmeta(args):
     filenames = []
@@ -292,10 +291,7 @@ def fetch_url(url):
     try:
         with urlopen(req, timeout=Config.conn_timeout) as resp:
             bytes_ = resp.read()
-    except socket.timeout as e:
-        log.error(e)
-        return
-    except URLError as e:
+    except (socket.timeout, URLError) as e:
         log.error(e)
         return
     final_url = resp.geturl()
