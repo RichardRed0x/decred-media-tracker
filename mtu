@@ -281,19 +281,26 @@ def cache_save(cid, bytes_):
     except FileExistsError as e:
         log.warning("already cached as %s", cid)
 
+def cache_load_bs(cid):
+    """Build a BeatutifulSoup instance from the cached file."""
+    return make_bs(os.path.join(Config.cache_dir, cid))
+
+CacheHit = namedtuple("CacheHit", ["url", "cache_id"])
+FetchResult = namedtuple("FetchResult", ["url", "cache_id", "bs"])
+
 def fetch_url(url):
     log.info("fetching %s", url)
     existing_cid = cache_id(url)
     if cache_exists(existing_cid):
         log.info("cache hit %s", existing_cid)
-        return
+        return CacheHit(url = url, cache_id = existing_cid)
     req = Request(url, headers={"User-Agent": Config.user_agent})
     try:
         with urlopen(req, timeout=Config.conn_timeout) as resp:
             bytes_ = resp.read()
     except (socket.timeout, URLError) as e:
         log.error(e)
-        return
+        return e
     final_url = resp.geturl()
     if url != final_url:
         log.warning("redirected to %s", final_url)
@@ -307,17 +314,61 @@ def fetch_url(url):
     else:
         log.warning("canonical link not found in HTML from %s", final_url)
         cache_url = final_url
-    cache_save(cache_id(cache_url), bytes_)
+    cid = cache_id(cache_url)
+    cache_save(cid, bytes_)
+    return FetchResult(url = final_url, cache_id = cid, bs = bs)
+
+def load_url(url):
+    """Like fetch_url, but also load the cached file if there was a cache hit."""
+    res = fetch_url(url)
+    if isinstance(res, CacheHit):
+        bs = cache_load_bs(res.cache_id)
+        return FetchResult(url = res.url, cache_id = res.cache_id, bs = bs)
+    return res
+
+def csv_iter(csvfilename):
+    """Generator yielding rows of the csv file."""
+    with open(csvfilename, newline='') as csvfile:
+        yield from csv.reader(csvfile)
+
+class CsvRow:
+    """Indexes of fields in the csv row/record."""
+    url = 1
 
 def fetch_from_csv(csvfilename):
     log.info("fetching URLs from %s", csvfilename)
-    CsvRecord = namedtuple("CsvRecord", ["date", "url"])
-    with open(csvfilename, newline='') as csvfile:
-        csvreader = csv.reader(csvfile)
-        next(csvreader) # skip header line
-        for row in csvreader:
-            rec = CsvRecord._make(row[:2])
-            fetch_url(rec.url)
+    for row in csv_iter(csvfilename):
+        fetch_url(row[CsvRow.url])
+
+def update_csv(csvfilename):
+    log.info("updating metadata in %s", csvfilename)
+    new_rows = []
+    csvit = csv_iter(csvfilename)
+    try:
+        header = next(csvit) # save header for writing it back later
+    except StopIteration:
+        log.error("empty csv file: %s", csvfilename)
+        return
+
+    for row in csvit:
+        url = row[CsvRow.url]
+        fr = load_url(url)
+        # inspect fetch result and see which cells of the row need updating
+        # mutate rows in-place
+        if isinstance(fr, FetchResult):
+            if url != fr.url:
+                row[CsvRow.url] = fr.url
+        elif isinstance(fr, Exception):
+            log.info("could not fetch, please mark as dead link: %s", url)
+            # todo mark automatically
+        new_rows.append(row)
+
+    # overwrite existing file
+    with open(csvfilename, "w", newline="") as outfile:
+        writer = csv.writer(outfile, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+        writer.writerow(header)
+        writer.writerows(new_rows)
+    log.info("file updated: %s", csvfilename)
 
 def cmd_fetch(args):
     init()
@@ -325,6 +376,10 @@ def cmd_fetch(args):
         fetch_from_csv(Config.main_csv)
     else:
         fetch_url(args.url)
+
+def cmd_update(args):
+    init()
+    update_csv(Config.main_csv)
 
 def make_arg_parser():
     import argparse
@@ -347,6 +402,9 @@ def make_arg_parser():
     fetch_group.add_argument("url", nargs='?', help="URL to fetch")
     fetch_group.add_argument("--csv", action="store_true", help="read URLs from " + Config.main_csv)
     parser_fetch.set_defaults(func=cmd_fetch)
+
+    parser_update = subparsers.add_parser("update", help="update metadata in a " + Config.main_csv + " file, fetching URLs as necessary")
+    parser_update.set_defaults(func=cmd_update)
 
     return parser
 
