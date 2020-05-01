@@ -26,6 +26,9 @@ class Config:
     main_csv        = "media.csv"
     log_file        = "mtu.log"
     conn_timeout    = 10
+    conn_blacklist  = [
+        "nasdaq.com",   # doesn't serve response to Python or wget
+    ]
 
 class Fields(Enum):
     """Standard fields we'll try to populate from all the various ways to store metadata used on the web.
@@ -294,6 +297,10 @@ def fetch_url(url):
     if cache_exists(existing_cid):
         log.info("cache hit %s", existing_cid)
         return CacheHit(url = url, cache_id = existing_cid)
+    domain = get_domain(url)
+    if domain in Config.conn_blacklist:
+        log.info("skipping blacklisted domain %s", domain)
+        return None
     req = Request(url, headers={"User-Agent": Config.user_agent})
     try:
         with urlopen(req, timeout=Config.conn_timeout) as resp:
