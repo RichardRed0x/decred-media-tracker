@@ -294,18 +294,18 @@ def cache_load_bs(cid):
 CacheHit = namedtuple("CacheHit", ["url", "cache_id"])
 FetchResult = namedtuple("FetchResult", ["url", "cache_id", "bs"])
 
-def fetch_url(url):
-    log.info("checking: %s", url)
+def fetch_url(url, tag):
+    log.info("(%s) checking: %s", tag, url)
     existing_cid = cache_id(url)
     if cache_exists(existing_cid):
-        log.info("found in cache with id: %s", existing_cid)
+        log.info("(%s) found in cache with id: %s", tag, existing_cid)
         return CacheHit(url = url, cache_id = existing_cid)
     domain = get_domain(url)
     if domain in Config.conn_blacklist:
-        log.info("not connecting to blacklisted domain: %s", domain)
+        log.info("(%s) not connecting to blacklisted domain: %s", tag, domain)
         return None
     req = Request(url, headers={"User-Agent": Config.user_agent})
-    log.info("fetching: %s", url)
+    log.info("(%s) fetching: %s", tag, url)
     try:
         with urlopen(req, timeout=Config.conn_timeout) as resp:
             bytes_ = resp.read()
@@ -314,15 +314,15 @@ def fetch_url(url):
         return e
     final_url = resp.geturl()
     if url != final_url:
-        log.warning("redirected to: %s", final_url)
+        log.warning("(%s) redirected to: %s", tag, final_url)
     cid = cache_id(final_url)
     cache_save(cid, bytes_)
     # since we have the full response now, return it as well to avoid a redundant read from the cache
     return FetchResult(url = final_url, cache_id = cid, bs = make_bs(bytes_))
 
-def load_url(url):
+def load_url(url, tag):
     """Like fetch_url, but also load the cached file if there was a cache hit."""
-    fr = fetch_url(url)
+    fr = fetch_url(url, tag)
     if isinstance(fr, CacheHit):
         bs = cache_load_bs(fr.cache_id)
         return FetchResult(url = fr.url, cache_id = fr.cache_id, bs = bs)
@@ -350,8 +350,8 @@ class CsvConst:
 
 def fetch_from_csv(csvfilename):
     log.info("fetching URLs in %s", csvfilename)
-    for row in csv_iter(csvfilename):
-        fetch_url(row[CsvRow.url])
+    for tag, row in enumerate(csv_iter(csvfilename), start=1):
+        fetch_url(row[CsvRow.url], tag)
 
 def update_csv(csvfilename):
     log.info("updating metadata in %s", csvfilename)
@@ -363,12 +363,12 @@ def update_csv(csvfilename):
         log.error("empty csv file: %s", csvfilename)
         return
 
-    for row in csvit:
+    for tag, row in enumerate(csvit, start=1):
         url = row[CsvRow.url]
         if row[CsvRow.dead_link] == CsvConst.true:
-            log.info("skipping dead link: %s", url)
+            log.info("(%s) skipping dead link: %s", tag, url)
         else:
-            fr = load_url(url)
+            fr = load_url(url, tag)
             # inspect fetch result and see which cells of the row need updating
             # mutate rows in-place
             if isinstance(fr, FetchResult):
@@ -380,12 +380,12 @@ def update_csv(csvfilename):
                 canon = canonical(fr.bs)
                 if canon:
                     if canon != fr.url:
-                        log.warning("canonical link is different from the final URL: %s", canon)
+                        log.warning("(%s) canonical link is different from the final URL: %s", tag, canon)
                 else:
-                    log.warning("canonical link is missing")
+                    log.warning("(%s) canonical link is missing", tag)
             elif isinstance(fr, Exception):
                 row[CsvRow.dead_link] = CsvConst.true
-                log.info("could not fetch, marked as dead link: %s", url)
+                log.info("(%s) could not fetch, marked as dead link: %s", tag, url)
         new_rows.append(row)
 
     write_csv(csvfilename, new_rows)
