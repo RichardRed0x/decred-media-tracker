@@ -357,15 +357,18 @@ def update_csv(csvfilename):
 
     for row in csvit:
         url = row[CsvRow.url]
-        fr = load_url(url)
-        # inspect fetch result and see which cells of the row need updating
-        # mutate rows in-place
-        if isinstance(fr, FetchResult):
-            if url != fr.url:
-                row[CsvRow.url] = fr.url
-        elif isinstance(fr, Exception):
-            row[CsvRow.dead_link] = CsvConst.true
-            log.info("could not fetch, marked as dead link: %s", url)
+        if row[CsvRow.dead_link] == CsvConst.true:
+            log.info("skipping dead link: %s", url)
+        else:
+            fr = load_url(url)
+            # inspect fetch result and see which cells of the row need updating
+            # mutate rows in-place
+            if isinstance(fr, FetchResult):
+                if url != fr.url:
+                    row[CsvRow.url] = fr.url
+            elif isinstance(fr, Exception):
+                row[CsvRow.dead_link] = CsvConst.true
+                log.info("could not fetch, marked as dead link: %s", url)
         new_rows.append(row)
 
     # overwrite existing file
