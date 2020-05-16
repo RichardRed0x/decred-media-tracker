@@ -27,7 +27,8 @@ class Config:
     log_file        = "mtu.log"
     conn_timeout    = 10
     conn_blacklist  = [
-        "nasdaq.com",   # doesn't serve response to Python or wget
+        "bravenewcoin.com", # js-only site with no metadata in plain HTML
+        "nasdaq.com",       # doesn't serve response to Python or wget
     ]
     junk_url_params = [
         "gi",           # medium.com
