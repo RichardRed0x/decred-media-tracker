@@ -29,6 +29,9 @@ class Config:
     conn_blacklist  = [
         "nasdaq.com",   # doesn't serve response to Python or wget
     ]
+    junk_url_params = [
+        "gi",           # medium.com
+    ]
 
 class Fields(Enum):
     """Standard fields we'll try to populate from all the various ways to store metadata used on the web.
@@ -293,12 +296,10 @@ def cache_load_bs(cid):
 CacheHit = namedtuple("CacheHit", ["url", "cache_id"])
 FetchResult = namedtuple("FetchResult", ["url", "cache_id", "bs"])
 
-JUNK_URL_PARAMS = ["gi"]
-
 def url_drop_junk(url):
     url_parsed = urlparse(url)
     qs_parsed = parse_qsl(url_parsed.query, keep_blank_values = True, strict_parsing = True)
-    qs_clean_parsed = list(filter(lambda pair: pair[0] not in JUNK_URL_PARAMS, qs_parsed))
+    qs_clean_parsed = list(filter(lambda pair: pair[0] not in Config.junk_url_params, qs_parsed))
     qs_clean = urlencode(qs_clean_parsed)
     url_clean_parsed = url_parsed._replace(query = qs_clean)
     url_clean = urlunparse(url_clean_parsed)
