@@ -335,15 +335,37 @@ class CsvConst:
     false           = "no"
     true            = "yes"
 
+MediaItem = namedtuple("MediaItem", [
+    "published_utc",
+    "url",
+    "title",
+    "author",
+    "contributor",
+    "backlink",
+    "type",
+    "topics",
+    "other_projects",
+    "dead_link",
+])
+
 def csv_iter(csvfilename):
     """Generator yielding rows of the csv file."""
     with open(csvfilename, newline=CsvConst.newline) as csvfile:
-        yield from csv.reader(csvfile)
+        reader = csv.reader(csvfile)
+        try:
+            header = next(reader)
+        except StopIteration:
+            raise MtuError("empty csv file: " + csvfilename)
+        expected_header = list(MediaItem._fields)
+        if expected_header != header:
+            raise MtuError("unexpected csv header: got {}, want {}".format(header, expected_header))
+        yield from reader
 
 def write_csv(filename, rows):
     # overwrite existing file
     with open(filename, "w", newline=CsvConst.newline) as f:
         writer = csv.writer(f, quoting=CsvConst.quoting, lineterminator=CsvConst.lineterminator)
+        writer.writerow(MediaItem._fields)
         writer.writerows(rows)
 
 class CsvRow:
@@ -359,14 +381,8 @@ def fetch_from_csv(csvfilename):
 def update_csv(csvfilename):
     log.info("updating metadata in %s", csvfilename)
     new_rows = []
-    csvit = csv_iter(csvfilename)
-    try:
-        new_rows.append(next(csvit)) # header
-    except StopIteration:
-        log.error("empty csv file: %s", csvfilename)
-        return
 
-    for tag, row in enumerate(csvit, start=1):
+    for tag, row in enumerate(csv_iter(csvfilename), start=1):
         url = row[CsvRow.url]
         if row[CsvRow.dead_link] == CsvConst.true:
             log.info("(%s) skipping dead link: %s", tag, url)
@@ -449,7 +465,7 @@ def main():
         try:
             args.func(args)
         except MtuError as e:
-            print("error:", e)
+            log.error(e)
         except KeyboardInterrupt as e:
             print("aborting via Ctrl-C")
         except BrokenPipeError:
