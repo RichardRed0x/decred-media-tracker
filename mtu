@@ -415,7 +415,7 @@ def update_csv(csvfilename):
 def cmd_fetch(args):
     init()
     if args.url:
-        fetch_url(args.url)
+        fetch_url(args.url, 0)
     else:
         fetch_from_csv(Config.main_csv)
 
