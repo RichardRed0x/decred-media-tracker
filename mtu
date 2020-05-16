@@ -348,8 +348,8 @@ MediaItem = namedtuple("MediaItem", [
     "dead_link",
 ])
 
-def csv_iter(csvfilename):
-    """Generator yielding rows of the csv file."""
+def media_item_iter(csvfilename):
+    """Generator yielding MediaItem-s from the rows of the csv file."""
     with open(csvfilename, newline=CsvConst.newline) as csvfile:
         reader = csv.reader(csvfile)
         try:
@@ -359,32 +359,27 @@ def csv_iter(csvfilename):
         expected_header = list(MediaItem._fields)
         if expected_header != header:
             raise MtuError("unexpected csv header: got {}, want {}".format(header, expected_header))
-        yield from reader
+        yield from map(MediaItem._make, reader)
 
-def write_csv(filename, rows):
+def write_media_items(filename, items):
     # overwrite existing file
     with open(filename, "w", newline=CsvConst.newline) as f:
         writer = csv.writer(f, quoting=CsvConst.quoting, lineterminator=CsvConst.lineterminator)
         writer.writerow(MediaItem._fields)
-        writer.writerows(rows)
-
-class CsvRow:
-    """Indexes of fields in the csv row/record."""
-    url         = 1
-    dead_link   = 9
+        writer.writerows(items)
 
 def fetch_from_csv(csvfilename):
     log.info("fetching URLs in %s", csvfilename)
-    for tag, row in enumerate(csv_iter(csvfilename), start=1):
-        fetch_url(row[CsvRow.url], tag)
+    for tag, mi in enumerate(media_item_iter(csvfilename), start=1):
+        fetch_url(mi.url, tag)
 
 def update_csv(csvfilename):
     log.info("updating metadata in %s", csvfilename)
-    new_rows = []
+    new_items = []
 
-    for tag, row in enumerate(csv_iter(csvfilename), start=1):
-        url = row[CsvRow.url]
-        if row[CsvRow.dead_link] == CsvConst.true:
+    for tag, mi in enumerate(media_item_iter(csvfilename), start=1):
+        url = mi.url
+        if mi.dead_link == CsvConst.true:
             log.info("(%s) skipping dead link: %s", tag, url)
         else:
             fr = load_url(url, tag)
@@ -392,8 +387,8 @@ def update_csv(csvfilename):
             # mutate rows in-place
             if isinstance(fr, FetchResult):
                 if url != fr.url:
-                    row[CsvRow.url] = fr.url
-                    log.info("(%s) setting new url: %s", tag, fr.url)
+                    mi = mi._replace(url = fr.url)
+                    log.info("(%s) url changed to: %s", tag, fr.url)
                 # inspect canonical
                 # we can't automatically determine whether to use canonical link because
                 # it is not properly populated on some sites
@@ -404,11 +399,11 @@ def update_csv(csvfilename):
                 else:
                     log.warning("(%s) canonical link is missing", tag)
             elif isinstance(fr, Exception):
-                row[CsvRow.dead_link] = CsvConst.true
+                mi = mi._replace(dead_link = CsvConst.true)
                 log.info("(%s) could not fetch, marked as dead link: %s", tag, url)
-        new_rows.append(row)
+        new_items.append(mi)
 
-    write_csv(csvfilename, new_rows)
+    write_media_items(csvfilename, new_items)
     log.info("file updated: %s", csvfilename)
 
 def cmd_fetch(args):
