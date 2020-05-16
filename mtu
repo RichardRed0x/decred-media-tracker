@@ -350,16 +350,19 @@ MediaItem = namedtuple("MediaItem", [
 
 def media_item_iter(csvfilename):
     """Generator yielding MediaItem-s from the rows of the csv file."""
-    with open(csvfilename, newline=CsvConst.newline) as csvfile:
-        reader = csv.reader(csvfile)
-        try:
-            header = next(reader)
-        except StopIteration:
-            raise MtuError("empty csv file: " + csvfilename)
-        expected_header = list(MediaItem._fields)
-        if expected_header != header:
-            raise MtuError("unexpected csv header: got {}, want {}".format(header, expected_header))
-        yield from map(MediaItem._make, reader)
+    try:
+        with open(csvfilename, newline=CsvConst.newline) as csvfile:
+            reader = csv.reader(csvfile)
+            try:
+                header = next(reader)
+            except StopIteration:
+                raise MtuError("empty csv file: " + csvfilename)
+            expected_header = list(MediaItem._fields)
+            if expected_header != header:
+                raise MtuError("unexpected csv header: got {}, want {}".format(header, expected_header))
+            yield from map(MediaItem._make, reader)
+    except FileNotFoundError:
+        raise MtuError("file not found: " + csvfilename)
 
 def write_media_items(filename, items):
     # overwrite existing file
