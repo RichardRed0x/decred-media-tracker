@@ -298,12 +298,15 @@ FetchResult = namedtuple("FetchResult", ["url", "cache_id", "bs"])
 
 def url_drop_junk(url):
     url_parsed = urlparse(url)
-    qs_parsed = parse_qsl(url_parsed.query, keep_blank_values = True, strict_parsing = True)
-    qs_clean_parsed = list(filter(lambda pair: pair[0] not in Config.junk_url_params, qs_parsed))
-    qs_clean = urlencode(qs_clean_parsed)
-    url_clean_parsed = url_parsed._replace(query = qs_clean)
-    url_clean = urlunparse(url_clean_parsed)
-    return url_clean
+    if url_parsed.query:
+        qs_parsed = parse_qsl(url_parsed.query, keep_blank_values = True, strict_parsing = True)
+        qs_clean_parsed = list(filter(lambda pair: pair[0] not in Config.junk_url_params, qs_parsed))
+        qs_clean = urlencode(qs_clean_parsed)
+        url_clean_parsed = url_parsed._replace(query = qs_clean)
+        url_clean = urlunparse(url_clean_parsed)
+        return url_clean
+    else:
+        return url
 
 def fetch_url(url, tag):
     log.info("(%s) checking: %s", tag, url)
