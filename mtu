@@ -374,6 +374,7 @@ def update_csv(csvfilename):
             if isinstance(fr, FetchResult):
                 if url != fr.url:
                     row[CsvRow.url] = fr.url
+                    log.info("(%s) setting new url: %s", tag, fr.url)
                 # inspect canonical
                 # we can't automatically determine whether to use canonical link because
                 # it is not properly populated on some sites
