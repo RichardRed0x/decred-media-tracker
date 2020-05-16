@@ -411,10 +411,10 @@ def update_csv(csvfilename):
 
 def cmd_fetch(args):
     init()
-    if args.csv:
-        fetch_from_csv(Config.main_csv)
-    else:
+    if args.url:
         fetch_url(args.url)
+    else:
+        fetch_from_csv(Config.main_csv)
 
 def cmd_update(args):
     init()
@@ -428,18 +428,15 @@ def make_arg_parser():
 
     parser_meta = subparsers.add_parser("meta", help="print metadata extracted from HTML file")
     parser_meta.add_argument("file", nargs='?', help="file to process")
-    parser_meta.add_argument("--list", nargs='?', const=Config.import_file,
-                                help="list of files to process")
+    parser_meta.add_argument("--list", nargs='?', const=Config.import_file, help="list of files to process")
     parser_meta.set_defaults(func=cmd_getmeta)
 
     parser_inspect = subparsers.add_parser("inspect", help="inspect HTML file for possibly interesting metadata")
     parser_inspect.add_argument("file", nargs='?', help="file to process")
     parser_inspect.set_defaults(func=cmd_inspect)
 
-    parser_fetch = subparsers.add_parser("fetch", help="fetch URL(s) and cache the HTML")
-    fetch_group = parser_fetch.add_mutually_exclusive_group(required=True)
-    fetch_group.add_argument("url", nargs='?', help="URL to fetch")
-    fetch_group.add_argument("--csv", action="store_true", help="read URLs from " + Config.main_csv)
+    parser_fetch = subparsers.add_parser("fetch", help="fetch the URL and cache its HTML, without the url argument do it for all URLs found in " + Config.main_csv)
+    parser_fetch.add_argument("url", nargs='?', help="URL to fetch")
     parser_fetch.set_defaults(func=cmd_fetch)
 
     parser_update = subparsers.add_parser("update", help="update metadata in a " + Config.main_csv + " file, fetching URLs as necessary")
