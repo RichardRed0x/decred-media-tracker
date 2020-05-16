@@ -210,8 +210,7 @@ def print_multimeta(multimeta): # dict(Field -> OrderedDict(Src -> str))
         if src_values:
             print_source_values(src_values)
 
-class CommandError(Exception):
-    """Raise this when command is called by the user incorrectly."""
+class MtuError(Exception):
     pass
 
 def read_lines(path):
@@ -449,7 +448,7 @@ def main():
     if args.command:
         try:
             args.func(args)
-        except CommandError as e:
+        except MtuError as e:
             print("error:", e)
         except KeyboardInterrupt as e:
             print("aborting via Ctrl-C")
