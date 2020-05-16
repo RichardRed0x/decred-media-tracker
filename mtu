@@ -328,25 +328,29 @@ def load_url(url, tag):
         return FetchResult(url = fr.url, cache_id = fr.cache_id, bs = bs)
     return fr
 
+class CsvConst:
+    """Constants defining our custom csv format."""
+    newline         = "" # for use in the open() function
+    lineterminator  = "\n"
+    quoting         = csv.QUOTE_MINIMAL
+    false           = "no"
+    true            = "yes"
+
 def csv_iter(csvfilename):
     """Generator yielding rows of the csv file."""
-    with open(csvfilename, newline='') as csvfile:
+    with open(csvfilename, newline=CsvConst.newline) as csvfile:
         yield from csv.reader(csvfile)
 
 def write_csv(filename, rows):
     # overwrite existing file
-    with open(filename, "w", newline="") as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+    with open(filename, "w", newline=CsvConst.newline) as f:
+        writer = csv.writer(f, quoting=CsvConst.quoting, lineterminator=CsvConst.lineterminator)
         writer.writerows(rows)
 
 class CsvRow:
     """Indexes of fields in the csv row/record."""
     url         = 1
     dead_link   = 9
-
-class CsvConst:
-    false   = "no"
-    true    = "yes"
 
 def fetch_from_csv(csvfilename):
     log.info("fetching URLs in %s", csvfilename)
