@@ -295,7 +295,7 @@ FetchResult = namedtuple("FetchResult", ["url", "cache_id", "bs"])
 
 JUNK_URL_PARAMS = ["gi"]
 
-def clean_url(url):
+def url_drop_junk(url):
     url_parsed = urlparse(url)
     qs_parsed = parse_qsl(url_parsed.query, keep_blank_values = True, strict_parsing = True)
     qs_clean_parsed = list(filter(lambda pair: pair[0] not in JUNK_URL_PARAMS, qs_parsed))
@@ -306,16 +306,19 @@ def clean_url(url):
 
 def fetch_url(url, tag):
     log.info("(%s) checking: %s", tag, url)
-    existing_cid = cache_id(url)
+    clean_url = url_drop_junk(url)
+    if clean_url != url:
+        log.warning("(%s) passed url had junk, after cleanup: %s", tag, clean_url)
+    existing_cid = cache_id(clean_url)
     if cache_exists(existing_cid):
         log.info("(%s) found in cache with id: %s", tag, existing_cid)
-        return CacheHit(url = url, cache_id = existing_cid)
-    domain = get_domain(url)
+        return CacheHit(url = clean_url, cache_id = existing_cid)
+    domain = get_domain(clean_url)
     if domain in Config.conn_blacklist:
         log.info("(%s) not connecting to blacklisted domain: %s", tag, domain)
         return None
-    req = Request(url, headers={"User-Agent": Config.user_agent})
-    log.info("(%s) fetching: %s", tag, url)
+    req = Request(clean_url, headers={"User-Agent": Config.user_agent})
+    log.info("(%s) fetching: %s", tag, clean_url)
     try:
         with urlopen(req, timeout=Config.conn_timeout) as resp:
             bytes_ = resp.read()
@@ -323,15 +326,15 @@ def fetch_url(url, tag):
         log.error("(%s) %s", tag, e)
         return e
     redir_url = resp.geturl()
-    if redir_url != url:
+    if redir_url != clean_url:
         log.warning("(%s) redirected to: %s", tag, redir_url)
-    cleaned_url = clean_url(redir_url)
-    if cleaned_url != redir_url:
-        log.info("(%s) found junk in the url, after cleanup: %s", tag, cleaned_url)
-    cid = cache_id(cleaned_url)
+    clean_redir_url = url_drop_junk(redir_url)
+    if clean_redir_url != redir_url:
+        log.info("(%s) redirected url had junk, after cleanup: %s", tag, clean_redir_url)
+    cid = cache_id(clean_redir_url)
     cache_save(cid, bytes_, tag)
     # since we have the full response now, return it as well to avoid a redundant read from the cache
-    return FetchResult(url = cleaned_url, cache_id = cid, bs = make_bs(bytes_))
+    return FetchResult(url = clean_redir_url, cache_id = cid, bs = make_bs(bytes_))
 
 def load_url(url, tag):
     """Like fetch_url, but also load the cached file if there was a cache hit."""
