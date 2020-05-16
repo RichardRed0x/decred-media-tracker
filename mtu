@@ -279,13 +279,13 @@ def cache_id(url):
 def cache_exists(cid):
     return os.path.isfile(os.path.join(Config.cache_dir, cid))
 
-def cache_save(cid, bytes_):
+def cache_save(cid, bytes_, tag):
     try:
         with open(os.path.join(Config.cache_dir, cid), "xb") as f:
             f.write(bytes_)
-        log.info("cached with id: %s", cid)
+        log.info("(%s) cached with id: %s", tag, cid)
     except FileExistsError as e:
-        log.warning("already cached with id: %s", cid)
+        log.warning("(%s) already cached with id: %s", tag, cid)
 
 def cache_load_bs(cid):
     """Build a BeatutifulSoup instance from the cached file."""
@@ -310,13 +310,13 @@ def fetch_url(url, tag):
         with urlopen(req, timeout=Config.conn_timeout) as resp:
             bytes_ = resp.read()
     except (socket.timeout, URLError) as e:
-        log.error(e)
+        log.error("(%s) %s", tag, e)
         return e
     final_url = resp.geturl()
     if url != final_url:
         log.warning("(%s) redirected to: %s", tag, final_url)
     cid = cache_id(final_url)
-    cache_save(cid, bytes_)
+    cache_save(cid, bytes_, tag)
     # since we have the full response now, return it as well to avoid a redundant read from the cache
     return FetchResult(url = final_url, cache_id = cid, bs = make_bs(bytes_))
 
