@@ -374,7 +374,10 @@ def write_media_items(filename, items):
 def fetch_from_csv(csvfilename):
     log.info("fetching URLs in %s", csvfilename)
     for tag, mi in enumerate(media_item_iter(csvfilename), start=1):
-        fetch_url(mi.url, tag)
+        if mi.dead_link == CsvConst.true:
+            log.info("(%s) skipping dead link: %s", tag, mi.url)
+        else:
+            fetch_url(mi.url, tag)
 
 def update_csv(csvfilename):
     log.info("updating metadata in %s", csvfilename)
