@@ -4,12 +4,13 @@
 
 import csv
 import json
-import logging as log
+import logging
 import os
 import socket
 
 from datetime import timezone
 from enum import Enum
+from functools import partial
 from collections import OrderedDict, namedtuple
 from hashlib import sha256
 from urllib.request import urlopen, Request, URLError
@@ -282,13 +283,13 @@ def cache_id(url):
 def cache_exists(cid):
     return os.path.isfile(os.path.join(Config.cache_dir, cid))
 
-def cache_save(cid, bytes_, tag):
+def cache_save(cid, bytes_):
     try:
         with open(os.path.join(Config.cache_dir, cid), "xb") as f:
             f.write(bytes_)
-        log.info("(%s) cached with id: %s", tag, cid)
+        log.info("cached with id: %s", cid)
     except FileExistsError as e:
-        log.warning("(%s) already cached with id: %s", tag, cid)
+        log.warning("already cached with id: %s", cid)
 
 def cache_load_bs(cid):
     """Build a BeatutifulSoup instance from the cached file."""
@@ -309,41 +310,41 @@ def url_drop_junk(url):
     else:
         return url
 
-def fetch_url(url, tag):
-    log.info("(%s) checking: %s", tag, url)
+def fetch_url(url):
+    log.info("checking: %s", url)
     clean_url = url_drop_junk(url)
     if clean_url != url:
-        log.warning("(%s) passed url had junk, after cleanup: %s", tag, clean_url)
+        log.warning("passed url had junk, after cleanup: %s", clean_url)
     existing_cid = cache_id(clean_url)
     if cache_exists(existing_cid):
-        log.info("(%s) found in cache with id: %s", tag, existing_cid)
+        log.info("found in cache with id: %s", existing_cid)
         return CacheHit(url = clean_url, cache_id = existing_cid)
     domain = get_domain(clean_url)
     if domain in Config.conn_blacklist:
-        log.info("(%s) not connecting to blacklisted domain: %s", tag, domain)
+        log.info("not connecting to blacklisted domain: %s", domain)
         return None
     req = Request(clean_url, headers={"User-Agent": Config.user_agent})
-    log.info("(%s) fetching: %s", tag, clean_url)
+    log.info("fetching: %s", clean_url)
     try:
         with urlopen(req, timeout=Config.conn_timeout) as resp:
             bytes_ = resp.read()
     except (socket.timeout, URLError) as e:
-        log.error("(%s) %s", tag, e)
+        log.error(e)
         return e
     redir_url = resp.geturl()
     if redir_url != clean_url:
-        log.warning("(%s) redirected to: %s", tag, redir_url)
+        log.warning("redirected to: %s", redir_url)
     clean_redir_url = url_drop_junk(redir_url)
     if clean_redir_url != redir_url:
-        log.info("(%s) redirected url had junk, after cleanup: %s", tag, clean_redir_url)
+        log.info("redirected url had junk, after cleanup: %s", clean_redir_url)
     cid = cache_id(clean_redir_url)
-    cache_save(cid, bytes_, tag)
+    cache_save(cid, bytes_)
     # since we have the full response now, return it as well to avoid a redundant read from the cache
     return FetchResult(url = clean_redir_url, cache_id = cid, bs = make_bs(bytes_))
 
-def load_url(url, tag):
+def load_url(url):
     """Like fetch_url, but also load the cached file if there was a cache hit."""
-    fr = fetch_url(url, tag)
+    fr = fetch_url(url)
     if isinstance(fr, CacheHit):
         bs = cache_load_bs(fr.cache_id)
         return FetchResult(url = fr.url, cache_id = fr.cache_id, bs = bs)
@@ -393,43 +394,55 @@ def write_media_items(filename, items):
         writer.writerow(MediaItem._fields)
         writer.writerows(items)
 
+def filter_log_record(record, context):
+    # This implements the protocol of logging.Filter in Python 3.2+: accept a LogRecord and return a boolean.
+    # Bind the context arg with partial function application.
+    record.msg = "({}) {}".format(context, record.msg)
+    return True
+
 def fetch_from_csv(csvfilename):
     log.info("fetching URLs in %s", csvfilename)
-    for tag, mi in enumerate(media_item_iter(csvfilename), start=1):
+    for itemid, mi in enumerate(media_item_iter(csvfilename), start=1):
+        log_filter = partial(filter_log_record, context = itemid)
+        log.addFilter(log_filter)
         if mi.dead_link == CsvConst.true:
-            log.info("(%s) skipping dead link: %s", tag, mi.url)
+            log.info("skipping dead link: %s", mi.url)
         else:
-            fetch_url(mi.url, tag)
+            fetch_url(mi.url)
+        log.removeFilter(log_filter)
 
 def update_csv(csvfilename):
     log.info("updating metadata in %s", csvfilename)
     new_items = []
 
-    for tag, mi in enumerate(media_item_iter(csvfilename), start=1):
+    for itemid, mi in enumerate(media_item_iter(csvfilename), start=1):
+        log_filter = partial(filter_log_record, context = itemid)
+        log.addFilter(log_filter)
         url = mi.url
         if mi.dead_link == CsvConst.true:
-            log.info("(%s) skipping dead link: %s", tag, url)
+            log.info("skipping dead link: %s", url)
         else:
-            fr = load_url(url, tag)
+            fr = load_url(url)
             # inspect fetch result and see which cells of the row need updating
             # mutate rows in-place
             if isinstance(fr, FetchResult):
                 if url != fr.url:
                     mi = mi._replace(url = fr.url)
-                    log.info("(%s) url changed to: %s", tag, fr.url)
+                    log.info("url changed to: %s", fr.url)
                 # inspect canonical
                 # we can't automatically determine whether to use canonical link because
                 # it is not properly populated on some sites
                 canon = canonical(fr.bs)
                 if canon:
                     if canon != fr.url:
-                        log.warning("(%s) canonical link is different from the final URL: %s", tag, canon)
+                        log.warning("canonical link is different from the final URL: %s", canon)
                 else:
-                    log.warning("(%s) canonical link is missing", tag)
+                    log.warning("canonical link is missing")
             elif isinstance(fr, Exception):
                 mi = mi._replace(dead_link = CsvConst.true)
-                log.info("(%s) could not fetch, marked as dead link: %s", tag, url)
+                log.info("could not fetch, marked as dead link: %s", url)
         new_items.append(mi)
+        log.removeFilter(log_filter)
 
     write_media_items(csvfilename, new_items)
     log.info("file updated: %s", csvfilename)
@@ -437,7 +450,7 @@ def update_csv(csvfilename):
 def cmd_fetch(args):
     init()
     if args.url:
-        fetch_url(args.url, 0)
+        fetch_url(args.url)
     else:
         fetch_from_csv(Config.main_csv)
 
@@ -470,13 +483,16 @@ def make_arg_parser():
     return parser
 
 def main():
-    log.basicConfig(level=log.INFO,
-                    datefmt="%Y-%m-%d %H:%M:%S",
-                    format="%(asctime)s.%(msecs)03d [%(levelname)-4.4s] %(message)s",
-                    handlers=[
-                        log.FileHandler(Config.log_file),
-                        log.StreamHandler(),
-                    ])
+    logging.basicConfig(level=logging.INFO,
+                        datefmt="%Y-%m-%d %H:%M:%S",
+                        format="%(asctime)s.%(msecs)03d [%(levelname)-4.4s] %(message)s",
+                        handlers=[
+                            logging.FileHandler(Config.log_file),
+                            logging.StreamHandler(),
+                        ])
+
+    global log
+    log = logging.getLogger()
 
     parser = make_arg_parser()
     args = parser.parse_args()
